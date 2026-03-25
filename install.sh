@@ -39,11 +39,11 @@ for arg in "$@"; do
 done
 
 # ── locate Python 3.10+ ───────────────────────────────────────────────────────
-find_python310() {
+find_python39() {
   for cmd in python3.13 python3.12 python3.11 python3.10 python3 python; do
     if command -v "$cmd" &>/dev/null; then
       # Check version is >= 3.10
-      ver_ok=$("$cmd" -c "import sys; print(sys.version_info >= (3,10))" 2>/dev/null)
+      ver_ok=$("$cmd" -c "import sys; print(sys.version_info >= (3,9))" 2>/dev/null)
       if [ "$ver_ok" = "True" ]; then
         echo "$cmd"
         return
@@ -55,10 +55,10 @@ find_python310() {
 
 echo -e "\n${BOLD}WebSec Platform — Installer${NC}\n"
 
-PYTHON=$(find_python310)
+PYTHON=$(find_python39)
 
 if [ -z "$PYTHON" ]; then
-  err "Python 3.10+ not found.\n\
+  err "Python 3.9+ not found.\n\
   Install it from https://www.python.org/downloads/\n\
   or via your package manager:\n\
     Kali/Ubuntu:  sudo apt install python3.11\n\
@@ -174,8 +174,39 @@ exec python3 -m websec_platform \"\$@\""
     chmod +x "$LOCAL_BIN/websec"
     ok "'websec' installed → $LOCAL_BIN/websec"
     if [[ ":$PATH:" != *":$LOCAL_BIN:"* ]]; then
-      warn "~/.local/bin is not in your PATH — add this to ~/.bashrc or ~/.zshrc:"
-      echo "       export PATH=\"\$HOME/.local/bin:\$PATH\""
+      # Detect active shell profile and append PATH export automatically
+      PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
+      PROFILE=""
+
+      if [ -n "${ZSH_VERSION:-}" ] || [[ "${SHELL:-}" == */zsh ]]; then
+        PROFILE="$HOME/.zshrc"
+      elif [ -n "${BASH_VERSION:-}" ] || [[ "${SHELL:-}" == */bash ]]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+          PROFILE="$HOME/.bash_profile"
+        else
+          PROFILE="$HOME/.bashrc"
+        fi
+      else
+        for f in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+          if [ -f "$f" ]; then PROFILE="$f"; break; fi
+        done
+      fi
+
+      if [ -n "$PROFILE" ]; then
+        if ! grep -qF ".local/bin" "$PROFILE" 2>/dev/null; then
+          echo "" >> "$PROFILE"
+          echo "# Added by WebSec Platform installer" >> "$PROFILE"
+          echo "$PATH_LINE" >> "$PROFILE"
+          ok "PATH updated in $PROFILE"
+          info "Run: source $PROFILE  (or open a new terminal to apply)"
+        else
+          info "PATH entry already present in $PROFILE — skipping"
+        fi
+        export PATH="$LOCAL_BIN:$PATH"
+      else
+        warn "Could not detect shell profile — add this line manually:"
+        echo "       $PATH_LINE"
+      fi
     fi
   fi
 fi

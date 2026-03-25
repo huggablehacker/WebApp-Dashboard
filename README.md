@@ -2,7 +2,7 @@
 
 A self-contained web application security testing toolkit built for information security professionals. Runs locally as a Python web app — open a browser, run tests, generate reports.
 
-![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![Flask](https://img.shields.io/badge/framework-Flask-lightgrey)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
@@ -23,7 +23,7 @@ A self-contained web application security testing toolkit built for information 
 
 ### Requirements
 
-- Python **3.10** or higher (3.11 / 3.12 / 3.13 all supported)
+- Python **3.9** or higher (3.10 / 3.11 / 3.12 / 3.13 all supported)
 - `pip`
 - An Anthropic API key (optional — only needed for AI report generation)
 

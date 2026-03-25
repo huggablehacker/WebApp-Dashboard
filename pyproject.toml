@@ -8,7 +8,7 @@ version         = "1.1.0"
 description     = "OWASP-based web application security testing platform with kickoff scripts and AI report generation"
 readme          = "README.md"
 license         = { file = "LICENSE" }
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 authors         = [{ name = "Your Name", email = "you@example.com" }]
 keywords        = ["security", "pentesting", "owasp", "web", "appsec"]
 
@@ -19,6 +19,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -59,7 +60,7 @@ websec_platform = ["templates/*.html", "static/**/*"]
 # ── ruff (replaces black + flake8 + isort) ─────────────────────────────────
 [tool.ruff]
 line-length    = 100
-target-version = "py310"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "ANN"]
@@ -70,7 +71,7 @@ ignore = ["ANN101", "ANN102"]
 
 # ── mypy ───────────────────────────────────────────────────────────────────
 [tool.mypy]
-python_version         = "3.10"
+python_version         = "3.9"
 strict                 = true
 ignore_missing_imports = true
 

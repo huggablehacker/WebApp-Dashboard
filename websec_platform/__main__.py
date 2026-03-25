@@ -2,7 +2,7 @@
 """
 WebSec Platform — CLI entry point.
 
-Requires Python 3.12+
+Requires Python 3.9+
 
 Usage
 -----
@@ -12,6 +12,7 @@ Usage
   python -m websec_platform --open       # auto-open browser
   websec                                 # if installed via pip
 """
+from __future__ import annotations
 
 import argparse
 import sys
@@ -21,9 +22,9 @@ import webbrowser
 
 
 def _check_python_version() -> None:
-    if sys.version_info < (3, 10):
+    if sys.version_info < (3, 9):
         print(
-            f"ERROR: WebSec Platform requires Python 3.10+. "
+            f"ERROR: WebSec Platform requires Python 3.9+. "
             f"You are running {sys.version}",
             file=sys.stderr,
         )
@@ -48,9 +49,13 @@ examples:
     parser.add_argument("--host",    default=None,           help="Bind host (default: 127.0.0.1)")
     parser.add_argument("--port",    type=int, default=None, help="Bind port (default: 5000)")
     parser.add_argument("--open",    action="store_true",    help="Auto-open browser on start")
-    parser.add_argument("--env",     choices=["development", "production"], default=None,
-                        help="Config environment (default: production)")
-    parser.add_argument("--version", action="store_true",    help="Print version and exit")
+    parser.add_argument(
+        "--env",
+        choices=["development", "production"],
+        default=None,
+        help="Config environment (default: production)",
+    )
+    parser.add_argument("--version", action="store_true", help="Print version and exit")
 
     args = parser.parse_args(argv)
 
@@ -88,7 +93,6 @@ examples:
         from waitress import serve
         serve(app, host=cfg.HOST, port=cfg.PORT, threads=4)
     except ImportError:
-        # Fallback to Flask dev server if waitress not installed
         app.run(host=cfg.HOST, port=cfg.PORT, debug=cfg.DEBUG, use_reloader=cfg.DEBUG)
 
 

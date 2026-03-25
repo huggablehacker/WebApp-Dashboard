@@ -4,8 +4,9 @@ WebSec Platform — configuration.
 Values are read from environment variables or a .env file in the
 project root (loaded automatically via python-dotenv when present).
 
-Requires Python 3.12+
+Requires Python 3.9+
 """
+from __future__ import annotations
 
 import os
 from pathlib import Path
@@ -50,10 +51,9 @@ class ProductionConfig(Config):
 def get_config(env: str | None = None) -> Config:
     """Return the correct Config subclass for the given environment name."""
     resolved = env or os.environ.get("FLASK_ENV", "production")
-    match resolved:
-        case "development":
-            return DevelopmentConfig()
-        case "production":
-            return ProductionConfig()
-        case _:
-            return Config()
+    if resolved == "development":
+        return DevelopmentConfig()
+    elif resolved == "production":
+        return ProductionConfig()
+    else:
+        return Config()

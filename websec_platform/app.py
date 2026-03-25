@@ -1,11 +1,11 @@
 """
 WebSec Platform — Flask application factory.
 
-Requires Python 3.12+
+Requires Python 3.9+
 """
+from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from flask import Flask, Response, jsonify, render_template, request
 
@@ -45,8 +45,8 @@ def create_app(config: Config | None = None) -> Flask:
         """Return safe client-side configuration."""
         return jsonify(
             {
-                "has_api_key":    bool(cfg.ANTHROPIC_API_KEY),
-                "app_version":    cfg.APP_VERSION,
+                "has_api_key":     bool(cfg.ANTHROPIC_API_KEY),
+                "app_version":     cfg.APP_VERSION,
                 "anthropic_model": cfg.ANTHROPIC_MODEL,
             }
         )
