@@ -1,14 +1,13 @@
 """
 WebSec Platform — Flask application factory.
-"""
-from __future__ import annotations
 
-import os
-import json
+Requires Python 3.12+
+"""
+
 import logging
 from pathlib import Path
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, Response, jsonify, render_template, request
 
 from .config import Config
 
@@ -46,8 +45,8 @@ def create_app(config: Config | None = None) -> Flask:
         """Return safe client-side configuration."""
         return jsonify(
             {
-                "has_api_key": bool(cfg.ANTHROPIC_API_KEY),
-                "app_version": cfg.APP_VERSION,
+                "has_api_key":    bool(cfg.ANTHROPIC_API_KEY),
+                "app_version":    cfg.APP_VERSION,
                 "anthropic_model": cfg.ANTHROPIC_MODEL,
             }
         )
@@ -55,26 +54,31 @@ def create_app(config: Config | None = None) -> Flask:
     @app.route("/api/generate-report", methods=["POST"])
     def generate_report():
         """
-        Proxy the Anthropic API call server-side so the API key is
+        Proxy the Anthropic API call server-side so the key is
         never exposed to the browser.
         """
         try:
             import anthropic
         except ImportError:
-            return jsonify({"error": "anthropic package not installed. Run: pip install anthropic"}), 500
+            return (
+                jsonify({"error": "anthropic package not installed. Run: pip install anthropic"}),
+                500,
+            )
 
         if not cfg.ANTHROPIC_API_KEY:
-            return jsonify(
-                {"error": "ANTHROPIC_API_KEY not set. Add it to your .env file or environment."}
-            ), 400
+            return (
+                jsonify({"error": "ANTHROPIC_API_KEY not set — add it to your .env file."}),
+                400,
+            )
 
-        body = request.get_json(silent=True) or {}
+        body   = request.get_json(silent=True) or {}
         prompt = body.get("prompt", "")
+
         if not prompt:
             return jsonify({"error": "No prompt provided"}), 400
 
         try:
-            client = anthropic.Anthropic(api_key=cfg.ANTHROPIC_API_KEY)
+            client  = anthropic.Anthropic(api_key=cfg.ANTHROPIC_API_KEY)
             message = client.messages.create(
                 model=cfg.ANTHROPIC_MODEL,
                 max_tokens=cfg.MAX_TOKENS,
@@ -84,6 +88,7 @@ def create_app(config: Config | None = None) -> Flask:
                 block.text for block in message.content if hasattr(block, "text")
             )
             return jsonify({"text": text})
+
         except Exception as exc:
             log.error("Anthropic API error: %s", exc)
             return jsonify({"error": str(exc)}), 500
@@ -91,14 +96,14 @@ def create_app(config: Config | None = None) -> Flask:
     @app.route("/api/generate-script", methods=["POST"])
     def generate_script():
         """Return the kickoff shell script as a downloadable file."""
-        body = request.get_json(silent=True) or {}
-        script_content = body.get("script", "")
-        if not script_content:
+        body    = request.get_json(silent=True) or {}
+        content = body.get("script", "")
+
+        if not content:
             return jsonify({"error": "No script content provided"}), 400
 
-        from flask import Response
         return Response(
-            script_content,
+            content,
             mimetype="text/x-shellscript",
             headers={"Content-Disposition": "attachment; filename=websec-kickoff.sh"},
         )
@@ -107,5 +112,10 @@ def create_app(config: Config | None = None) -> Flask:
     def health():
         return jsonify({"status": "ok", "version": cfg.APP_VERSION})
 
-    log.info("WebSec Platform v%s ready — http://%s:%s", cfg.APP_VERSION, cfg.HOST, cfg.PORT)
+    log.info(
+        "WebSec Platform v%s ready — http://%s:%s",
+        cfg.APP_VERSION,
+        cfg.HOST,
+        cfg.PORT,
+    )
     return app
