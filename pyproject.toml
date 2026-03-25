@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "websec-platform"
+version = "1.0.0"
+description = "OWASP-based web application security testing platform with kickoff scripts and AI report generation"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+keywords = ["security", "pentesting", "owasp", "web", "appsec"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+dependencies = [
+    "flask>=3.0.0",
+    "waitress>=3.0.0",
+    "python-dotenv>=1.0.0",
+    "anthropic>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-flask>=1.3",
+    "black>=24.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9",
+]
+
+[project.scripts]
+websec = "websec_platform.__main__:main"
+
+[project.urls]
+Homepage   = "https://github.com/yourusername/websec-platform"
+Repository = "https://github.com/yourusername/websec-platform"
+Issues     = "https://github.com/yourusername/websec-platform/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["websec_platform*"]
+
+[tool.setuptools.package-data]
+websec_platform = ["templates/*.html", "static/**/*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
