@@ -67,41 +67,6 @@ Or run directly without installing the command:
 python -m websec_platform
 python -m websec_platform --port 8080 --open
 ```
-
----
-
-## Project Structure
-
-```
-websec-platform/
-│
-├── websec_platform/            # Python package
-│   ├── __init__.py             # Package version
-│   ├── __main__.py             # CLI entry point (`websec` command)
-│   ├── app.py                  # Flask application factory + API routes
-│   ├── config.py               # Configuration (env vars / .env)
-│   │
-│   ├── templates/
-│   │   └── index.html          # Single-page app shell
-│   │
-│   └── static/
-│       ├── css/
-│       │   └── main.css        # Full stylesheet (light + dark mode)
-│       └── js/
-│           └── app.js          # All UI logic, tool data, checklist, script builder
-│
-├── docs/                       # Extended documentation
-│   └── usage.md
-│
-├── .env.example                # Environment variable template
-├── .gitignore
-├── install.sh                  # One-shot installer (Unix / macOS)
-├── LICENSE
-├── pyproject.toml              # Python packaging (PEP 517/518)
-├── README.md
-└── requirements.txt            # Pinned dependencies
-```
-
 ---
 
 ## API Endpoints
