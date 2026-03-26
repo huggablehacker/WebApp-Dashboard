@@ -81,14 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFindings();
   buildScript();
   updateStatBadges();
+  loadSettings();
 });
 
 // ── Tab routing ───────────────────────────────────────────────────────────────
 function switchTab(name) {
-  const names = ['setup','kickoff','checklist','findings','report'];
-  names.forEach(t => $(('tab-'+t)).style.display = t===name ? '' : 'none');
+  const names = ['setup','kickoff','checklist','findings','report','settings'];
+  names.forEach(t => { const el=$(('tab-'+t)); if(el) el.style.display = t===name ? '' : 'none'; });
   document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', names[i]===name));
   if (name==='kickoff') buildScript();
+  if (name==='settings') loadSettings();
 }
 
 // ── Setup / Tools tab ─────────────────────────────────────────────────────────
@@ -459,4 +461,120 @@ Generate: 1) Executive Summary 2) Engagement Overview 3) Risk Summary 4) Detaile
 
 function copyReport() {
   copyText($('report-output').textContent, $('copy-btn'), 'Copy Report');
+}
+
+// ── Settings tab ─────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const resp = await fetch(`${CFG.apiBase}/settings`);
+    const data = await resp.json();
+    updateKeyStatus(data.has_api_key, data.api_key_preview);
+  } catch(e) { /* ignore — server may not be ready */ }
+}
+
+function updateKeyStatus(hasKey, preview) {
+  const statusEl = $('key-status');
+  const previewEl = $('key-preview');
+  const banner = $('api-key-banner');
+  if (!statusEl) return;
+
+  if (hasKey) {
+    statusEl.textContent = 'Active';
+    statusEl.className = 'badge badge-ok';
+    if (previewEl) previewEl.textContent = preview || '';
+    if (banner) banner.style.display = 'none';
+    CFG.hasApiKey = true;
+  } else {
+    statusEl.textContent = 'Not set';
+    statusEl.className = 'badge badge-danger';
+    if (previewEl) previewEl.textContent = '';
+    if (banner) banner.style.display = '';
+    CFG.hasApiKey = false;
+  }
+}
+
+async function saveApiKey() {
+  const input = $('api-key-input');
+  const btn   = $('save-key-btn');
+  const msg   = $('key-msg');
+  const key   = (input.value || '').trim();
+
+  if (!key) { showKeyMsg('Paste your API key first', 'warn'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  msg.textContent = '';
+
+  try {
+    const resp = await fetch(`${CFG.apiBase}/settings/apikey`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: key })
+    });
+    const data = await resp.json();
+    if (data.error) { showKeyMsg(data.error, 'danger'); return; }
+    input.value = '';
+    updateKeyStatus(true, data.preview);
+    showKeyMsg('API key saved and active', 'ok');
+  } catch(e) {
+    showKeyMsg('Save failed: ' + e.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Key';
+  }
+}
+
+async function testApiKey() {
+  const btn = $('test-key-btn');
+  const msg = $('key-msg');
+  btn.disabled = true;
+  btn.textContent = 'Testing...';
+
+  try {
+    const resp = await fetch(`${CFG.apiBase}/settings/test`, { method: 'POST' });
+    const data = await resp.json();
+    if (data.ok) {
+      showKeyMsg('Connection successful — API key is working', 'ok');
+    } else {
+      showKeyMsg('Test failed: ' + (data.error || 'Unknown error'), 'danger');
+    }
+  } catch(e) {
+    showKeyMsg('Test failed: ' + e.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Test Connection';
+  }
+}
+
+async function clearApiKey() {
+  if (!confirm('Remove the API key?')) return;
+  try {
+    await fetch(`${CFG.apiBase}/settings/apikey`, { method: 'DELETE' });
+    updateKeyStatus(false, '');
+    showKeyMsg('API key removed', 'warn');
+  } catch(e) {
+    showKeyMsg('Failed: ' + e.message, 'danger');
+  }
+}
+
+function showKeyMsg(text, type) {
+  const el = $('key-msg');
+  if (!el) return;
+  const classes = { ok:'badge-ok', warn:'badge-warn', danger:'badge-danger' };
+  el.textContent = text;
+  el.className = 'badge ' + (classes[type] || '');
+  el.style.fontSize = '12px';
+  el.style.padding = '4px 10px';
+}
+
+function toggleKeyVisibility() {
+  const input = $('api-key-input');
+  const btn   = $('toggle-vis-btn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'Show';
+  }
 }

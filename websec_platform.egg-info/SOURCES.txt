@@ -1,0 +1,16 @@
+LICENSE
+README.md
+pyproject.toml
+websec_platform/__init__.py
+websec_platform/__main__.py
+websec_platform/app.py
+websec_platform/config.py
+websec_platform.egg-info/PKG-INFO
+websec_platform.egg-info/SOURCES.txt
+websec_platform.egg-info/dependency_links.txt
+websec_platform.egg-info/entry_points.txt
+websec_platform.egg-info/requires.txt
+websec_platform.egg-info/top_level.txt
+websec_platform/static/css/main.css
+websec_platform/static/js/app.js
+websec_platform/templates/index.html

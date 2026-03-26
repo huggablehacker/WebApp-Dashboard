@@ -1,0 +1,2 @@
+[console_scripts]
+websec = websec_platform.__main__:main

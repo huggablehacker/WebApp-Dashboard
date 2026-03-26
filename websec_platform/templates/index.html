@@ -10,9 +10,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
 </head>
 <body>
-  <div id="app-root"></div>
-
-  <!-- Server-side config injected for JS to consume -->
   <script>
     window.WEBSEC_CONFIG = {
       hasApiKey: {{ 'true' if has_api_key else 'false' }},
@@ -24,11 +21,233 @@
   {% if not has_api_key %}
   <div id="api-key-banner">
     <span>⚠ ANTHROPIC_API_KEY not set — report generation disabled.</span>
-    <span>Add it to your <code>.env</code> file and restart.</span>
+    <span>Go to the <strong>Settings</strong> tab to add your key.</span>
   </div>
   {% endif %}
 
-  <div id="app"></div>
+  <div id="app">
+
+    <div class="hdr">
+      <div class="hdr-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <h1>WebSec Platform</h1>
+        <div class="sub">OWASP Top 10 · Tool Integration · Kickoff Scripts · AI Reports</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px;" id="stat-badges"></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('setup')">Setup & Tools</div>
+      <div class="tab" onclick="switchTab('kickoff')">Kickoff Script</div>
+      <div class="tab" onclick="switchTab('checklist')">Test Checklist</div>
+      <div class="tab" onclick="switchTab('findings')">Findings</div>
+      <div class="tab" onclick="switchTab('report')">Report</div>
+      <div class="tab" onclick="switchTab('settings')">⚙ Settings</div>
+    </div>
+
+    <!-- TAB: SETUP -->
+    <div id="tab-setup">
+      <div class="card">
+        <div class="card-title">Target Configuration</div>
+        <div class="grid2" style="gap:12px;margin-bottom:12px;">
+          <div><label>Target URL / IP</label><input type="text" id="target-url" placeholder="https://app.example.com" oninput="updateTarget()"/></div>
+          <div><label>Application Name</label><input type="text" id="app-name" placeholder="ACME Corp Web App"/></div>
+          <div><label>Scope (comma-separated IPs/domains)</label><input type="text" id="scope" placeholder="app.example.com, api.example.com"/></div>
+          <div><label>Testing Type</label><select id="test-type"><option>Black Box</option><option>Grey Box</option><option>White Box</option></select></div>
+        </div>
+        <div><label>Notes / Authorization Letter Reference</label><textarea id="auth-notes" placeholder="e.g. Authorized per SOW #2024-001 signed 2024-01-15." style="min-height:60px;"></textarea></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tool Selection</div>
+        <div class="tool-grid" id="tool-grid"></div>
+      </div>
+      <div id="tool-cmd-panel"></div>
+    </div>
+
+    <!-- TAB: KICKOFF SCRIPT -->
+    <div id="tab-kickoff" style="display:none;">
+      <div class="card">
+        <div class="card-title">Platform / OS</div>
+        <div class="flex-row" style="flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+          <div class="os-pill active" onclick="setOS('kali', this)">Kali Linux</div>
+          <div class="os-pill" onclick="setOS('ubuntu', this)">Ubuntu / Debian</div>
+          <div class="os-pill" onclick="setOS('mac', this)">macOS (Homebrew)</div>
+          <div class="os-pill" onclick="setOS('arch', this)">Arch / BlackArch</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;" id="os-note">Kali Linux — most tools are pre-installed; script will verify and update each one.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Script Options</div>
+        <div class="grid2" style="gap:12px;margin-bottom:0;">
+          <div><label>Install directory</label><input type="text" id="install-dir" value="/opt/sectools" oninput="buildScript()"/></div>
+          <div><label>Output log file</label><input type="text" id="log-file" value="/var/log/sectools-setup.log" oninput="buildScript()"/></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin:0;"><input type="checkbox" id="opt-update" checked onchange="buildScript()" style="width:14px;height:14px;accent-color:var(--accent);"> Update existing tools</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin:0;"><input type="checkbox" id="opt-verify" checked onchange="buildScript()" style="width:14px;height:14px;accent-color:var(--accent);"> Verify after install</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin:0;"><input type="checkbox" id="opt-wordlists" onchange="buildScript()" style="width:14px;height:14px;accent-color:var(--accent);"> Download SecLists</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin:0;"><input type="checkbox" id="opt-nuclei-tmpl" onchange="buildScript()" style="width:14px;height:14px;accent-color:var(--accent);"> Download Nuclei templates</label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex-row" style="margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">Generated Kickoff Script</div>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="copyScript()">Copy Script</button>
+            <button class="btn btn-sm btn-success" onclick="downloadScript()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download .sh
+            </button>
+          </div>
+        </div>
+        <div class="tool-legend" id="tool-legend"></div>
+        <div class="script-out" id="script-output"></div>
+      </div>
+    </div>
+
+    <!-- TAB: CHECKLIST -->
+    <div id="tab-checklist" style="display:none;">
+      <div class="flex-row" style="margin-bottom:14px;">
+        <div class="flex-1">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;" id="progress-label">0 / 0 checks completed</div>
+          <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+        </div>
+        <button class="btn btn-sm" onclick="clearChecks()">Reset</button>
+      </div>
+      <div id="checklist-container"></div>
+    </div>
+
+    <!-- TAB: FINDINGS -->
+    <div id="tab-findings" style="display:none;">
+      <div class="card">
+        <div class="card-title">Add Finding</div>
+        <div class="grid2" style="gap:12px;margin-bottom:12px;">
+          <div><label>Title</label><input type="text" id="f-title" placeholder="SQL Injection in /login endpoint"/></div>
+          <div class="flex-row" style="align-items:flex-end;gap:8px;">
+            <div class="flex-1"><label>Severity</label><select id="f-sev"><option value="critical">Critical</option><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option><option value="info">Informational</option></select></div>
+            <div class="flex-1"><label>Tool / Source</label><input type="text" id="f-tool" placeholder="SQLMap, Burp, Manual..."/></div>
+          </div>
+        </div>
+        <div class="grid2" style="gap:12px;margin-bottom:12px;">
+          <div><label>Description / Evidence</label><textarea id="f-desc" placeholder="Paste tool output or describe the finding..."></textarea></div>
+          <div><label>Remediation Recommendation</label><textarea id="f-rem" placeholder="Update the query to use parameterized statements..."></textarea></div>
+        </div>
+        <div class="flex-row">
+          <div class="flex-1"><label>CVSS Score (optional)</label><input type="text" id="f-cvss" placeholder="7.5" style="width:120px;"/></div>
+          <button class="btn btn-primary" onclick="addFinding()">Add Finding</button>
+        </div>
+      </div>
+      <div id="findings-stats" style="display:none;"></div>
+      <div id="findings-list"><div class="empty-state">No findings yet — add your first finding above.</div></div>
+    </div>
+
+    <!-- TAB: REPORT -->
+    <div id="tab-report" style="display:none;">
+      <div class="card">
+        <div class="card-title">Report Configuration</div>
+        <div class="grid2" style="gap:12px;margin-bottom:12px;">
+          <div><label>Report Title</label><input type="text" id="r-title" placeholder="Web Application Penetration Test Report"/></div>
+          <div><label>Assessor / Company</label><input type="text" id="r-assessor" placeholder="SecTeam @ ACME Corp"/></div>
+          <div><label>Report Date</label><input type="text" id="r-date" placeholder="March 2026"/></div>
+          <div><label>Report Format</label><select id="r-format"><option>Executive + Technical</option><option>Executive Summary Only</option><option>Technical Detail Only</option><option>Remediation Roadmap</option></select></div>
+        </div>
+        <div><label>Additional Context for AI</label><textarea id="r-context" placeholder="e.g. This is a financial application. Prioritize PCI-DSS relevant findings." style="min-height:60px;"></textarea></div>
+      </div>
+      <div class="flex-row" style="margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="generateReport()" id="gen-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 2 13 9 20 9"/><path d="M20 14.66V20a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h5.34"/><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"/></svg>
+          Generate AI Report
+        </button>
+        <button class="btn btn-sm" onclick="copyReport()" id="copy-btn" style="display:none;">Copy Report</button>
+        <div class="flex-1"></div>
+        <div style="font-size:11px;color:var(--text3);">Powered by Claude Sonnet</div>
+      </div>
+      <div class="report-out" id="report-output"><span class="thinking">Configure your target, complete the checklist, and add findings — then generate your report.</span></div>
+    </div>
+
+    <!-- TAB: SETTINGS -->
+    <div id="tab-settings" style="display:none;">
+
+      <!-- API Key -->
+      <div class="card">
+        <div class="card-title">Anthropic API Key</div>
+
+        <!-- Current status row -->
+        <div class="flex-row" style="margin-bottom:16px;padding:12px 14px;background:var(--bg2);border-radius:8px;border:0.5px solid var(--border);">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Status</div>
+            <span id="key-status" class="badge {{ 'badge-ok' if has_api_key else 'badge-danger' }}">{{ 'Active' if has_api_key else 'Not set' }}</span>
+          </div>
+          <div style="margin-left:24px;">
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Key preview</div>
+            <span style="font-family:var(--mono);font-size:12px;" id="key-preview">{{ '••••••••...' if has_api_key else '—' }}</span>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <button class="btn btn-sm" id="test-key-btn" onclick="testApiKey()">Test Connection</button>
+            <button class="btn btn-sm btn-danger" onclick="clearApiKey()">Remove Key</button>
+          </div>
+        </div>
+
+        <!-- Input row -->
+        <div style="margin-bottom:10px;">
+          <label>Paste new API key</label>
+          <div class="flex-row" style="gap:8px;">
+            <input type="password" id="api-key-input"
+              placeholder="sk-ant-api03-..."
+              style="flex:1;font-family:var(--mono);font-size:13px;letter-spacing:0.04em;"
+              onkeydown="if(event.key==='Enter') saveApiKey()"/>
+            <button class="btn btn-sm" id="toggle-vis-btn" onclick="toggleKeyVisibility()">Show</button>
+            <button class="btn btn-primary" id="save-key-btn" onclick="saveApiKey()">Save Key</button>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span id="key-msg"></span>
+          <a href="https://console.anthropic.com/" target="_blank"
+             style="font-size:12px;color:var(--accent);text-decoration:none;margin-left:auto;">
+            Get a free API key →
+          </a>
+        </div>
+      </div>
+
+      <!-- Model settings -->
+      <div class="card">
+        <div class="card-title">Model Settings</div>
+        <div class="grid2" style="gap:12px;">
+          <div>
+            <label>Model</label>
+            <select disabled style="opacity:0.6;">
+              <option>claude-sonnet-4-20250514</option>
+            </select>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Change via ANTHROPIC_MODEL in .env</div>
+          </div>
+          <div>
+            <label>Max tokens</label>
+            <input type="text" disabled value="4096" style="opacity:0.6;"/>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Change via MAX_TOKENS in .env</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="card">
+        <div class="card-title">About</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          <div>Version: <span style="font-family:var(--mono);">{{ app_version }}</span></div>
+          <div>API base: <span style="font-family:var(--mono);">http://127.0.0.1:5000/api</span></div>
+          <div style="margin-top:8px;font-size:12px;">
+            Your API key is stored in the <code style="font-family:var(--mono);background:var(--bg2);padding:1px 5px;border-radius:3px;">.env</code>
+            file in the project root and is never sent to the browser.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-settings -->
+
+  </div><!-- /app -->
+
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

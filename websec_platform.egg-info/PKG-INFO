@@ -1,0 +1,261 @@
+Metadata-Version: 2.4
+Name: websec-platform
+Version: 1.1.0
+Summary: OWASP-based web application security testing platform with kickoff scripts and AI report generation
+Author-email: Your Name <you@example.com>
+License: MIT License
+        
+        Copyright (c) 2026 WebSec Platform Contributors
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Homepage, https://github.com/yourusername/websec-platform
+Project-URL: Repository, https://github.com/yourusername/websec-platform
+Project-URL: Issues, https://github.com/yourusername/websec-platform/issues
+Keywords: security,pentesting,owasp,web,appsec
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Information Technology
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Security
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: flask>=3.1.0
+Requires-Dist: waitress>=3.0.1
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: anthropic>=0.40.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3; extra == "dev"
+Requires-Dist: pytest-flask>=1.3; extra == "dev"
+Requires-Dist: ruff>=0.6; extra == "dev"
+Requires-Dist: mypy>=1.11; extra == "dev"
+Dynamic: license-file
+
+# WebSec Platform
+
+A self-contained web application security testing toolkit built for information security professionals. Runs locally as a Python web app — open a browser, run tests, generate reports.
+
+![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
+![Flask](https://img.shields.io/badge/framework-Flask-lightgrey)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
+---
+
+## Features
+
+- **OWASP Top 10 (2021) Checklist** — structured test coverage across all 10 categories with per-item pass/fail/finding tracking
+- **12 Tool Integrations** — Nmap, OWASP ZAP, Nikto, SQLMap, Gobuster, SSLScan, Burp Suite, WPScan, Subfinder, Nuclei, Hydra, FFUF
+- **Kickoff Script Generator** — generates a ready-to-run Bash script that installs or updates every selected tool, with per-OS support (Kali, Ubuntu/Debian, macOS, Arch/BlackArch)
+- **Findings Tracker** — log findings by severity (Critical → Informational), tool, CVSS score, evidence, and remediation
+- **AI Report Generation** — powered by Claude; synthesizes your target config, checklist results, and findings into a professional pentest report
+- **Zero cloud dependency** — runs entirely on your local machine; the only network call is the Anthropic API for report generation (optional)
+
+---
+
+## Quick Start
+
+### Requirements
+
+- Python **3.9** or higher (3.10 / 3.11 / 3.12 / 3.13 all supported)
+- `pip`
+- An Anthropic API key (optional — only needed for AI report generation)
+
+### Install
+
+```bash
+git clone https://github.com/yourusername/websec-platform.git
+cd websec-platform
+chmod +x install.sh
+./install.sh
+```
+
+The installer:
+1. Creates a Python virtual environment (`.venv/`)
+2. Installs all dependencies
+3. Creates a `.env` config file
+4. Wires up the `websec` CLI command
+
+### Configure
+
+Edit `.env` and add your Anthropic API key:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Get a free key at [console.anthropic.com](https://console.anthropic.com/).
+
+### Run
+
+```bash
+websec                      # http://127.0.0.1:5000
+websec --port 8080          # custom port
+websec --open               # auto-open in browser
+websec --host 0.0.0.0       # expose on your local network
+```
+
+Or run directly without installing the command:
+
+```bash
+python -m websec_platform
+python -m websec_platform --port 8080 --open
+```
+
+---
+
+## Project Structure
+
+```
+websec-platform/
+│
+├── websec_platform/            # Python package
+│   ├── __init__.py             # Package version
+│   ├── __main__.py             # CLI entry point (`websec` command)
+│   ├── app.py                  # Flask application factory + API routes
+│   ├── config.py               # Configuration (env vars / .env)
+│   │
+│   ├── templates/
+│   │   └── index.html          # Single-page app shell
+│   │
+│   └── static/
+│       ├── css/
+│       │   └── main.css        # Full stylesheet (light + dark mode)
+│       └── js/
+│           └── app.js          # All UI logic, tool data, checklist, script builder
+│
+├── docs/                       # Extended documentation
+│   └── usage.md
+│
+├── .env.example                # Environment variable template
+├── .gitignore
+├── install.sh                  # One-shot installer (Unix / macOS)
+├── LICENSE
+├── pyproject.toml              # Python packaging (PEP 517/518)
+├── README.md
+└── requirements.txt            # Pinned dependencies
+```
+
+---
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/` | Main application UI |
+| `GET`  | `/api/config` | Returns safe client-side config (has_api_key, model) |
+| `POST` | `/api/generate-report` | Proxies Anthropic API call; body: `{ "prompt": "..." }` |
+| `POST` | `/api/generate-script` | Returns kickoff script as downloadable `.sh` |
+| `GET`  | `/health` | Health check: `{ "status": "ok", "version": "1.0.0" }` |
+
+The Anthropic API key is kept server-side and never exposed to the browser.
+
+---
+
+## Kickoff Script
+
+The **Kickoff Script** tab generates a Bash script for your selected OS that:
+
+- Updates the system package index
+- Installs Go / Ruby runtimes if needed by selected tools
+- For each selected tool: checks if installed → updates if yes, installs if no
+- Optionally downloads SecLists wordlists and Nuclei templates
+- Logs all output to a configurable log file
+- Prints a color-coded summary on completion
+
+Supported platforms:
+
+| Platform | Package manager | Go tools | Gem tools |
+|----------|----------------|----------|-----------|
+| Kali Linux | `apt` | `go install` | `apt` |
+| Ubuntu / Debian | `apt`, `snap` | `go install` | `gem` |
+| macOS | `brew` | `brew` | `brew` |
+| Arch / BlackArch | `pacman` | `go install` | `gem` |
+
+---
+
+## Configuration Reference
+
+All settings can be set in `.env` or as environment variables.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANTHROPIC_API_KEY` | *(empty)* | Anthropic API key — required for report generation |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-20250514` | Model to use for reports |
+| `MAX_TOKENS` | `4096` | Max tokens for report generation |
+| `HOST` | `127.0.0.1` | Bind address |
+| `PORT` | `5000` | Bind port |
+| `DEBUG` | `false` | Enable Flask debug mode |
+| `SECRET_KEY` | *(random)* | Flask secret key — set a stable value for production |
+
+---
+
+## Development
+
+```bash
+# Install with dev dependencies
+./install.sh --dev
+
+# Run tests
+pytest
+
+# Lint + format (ruff replaces black, flake8, and isort)
+ruff check .
+ruff format .
+```
+
+### Running in development mode
+
+```bash
+FLASK_ENV=development websec --open
+# or
+DEBUG=true python -m websec_platform --open
+```
+
+---
+
+## Deployment Notes
+
+WebSec Platform is designed for **local use on a secured machine**. If you need to expose it on a network:
+
+- Set a strong `SECRET_KEY` in `.env`
+- Run behind a reverse proxy (nginx, Caddy) with TLS
+- Restrict access to authorized users only
+- Never expose the platform on a public network without authentication
+
+The application uses [Waitress](https://docs.pylonsproject.org/projects/waitress/en/stable/) as its production WSGI server — no separate Gunicorn/uWSGI setup required.
+
+---
+
+## Legal Notice
+
+This tool is intended for **authorized security testing only**. Always obtain written authorization before testing any system you do not own. The authors are not responsible for misuse.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
