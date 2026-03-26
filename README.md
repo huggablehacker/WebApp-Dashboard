@@ -1,4 +1,4 @@
-# WebSec Platform
+# WebApp Dashboard
 
 A self-contained web application security testing toolkit built for information security professionals. Runs locally as a Python web app — open a browser, run tests, generate reports.
 
